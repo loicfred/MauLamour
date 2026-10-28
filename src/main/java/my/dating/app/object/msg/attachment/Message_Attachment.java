@@ -1,9 +1,14 @@
 package my.dating.app.object.msg.attachment;
 
-import my.dating.app.service.DatabaseObject;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 
 import java.util.List;
 
+import static org.solarframework.db.spring.DatabaseRegistry.SolarDBManager;
+
+@Entity
+@Table(name = "message_attachment")
 public class Message_Attachment extends BaseAttachment<Message_Attachment> {
 
     public Message_Attachment() {}
@@ -17,10 +22,10 @@ public class Message_Attachment extends BaseAttachment<Message_Attachment> {
     }
 
     public static Message_Attachment getById(long id) {
-        return DatabaseObject.getById(Message_Attachment.class, id).orElse(null);
+        return SolarDBManager.getById(Message_Attachment.class, id).orElse(null);
     }
     public static List<Message_Attachment> getByMessage(long messageID) {
-        return DatabaseObject.getAllWhere(Message_Attachment.class, "MessageID = ?", messageID);
+        return SolarDBManager.getAllWhere(Message_Attachment.class, "MessageID = ?", messageID);
     }
 
 }

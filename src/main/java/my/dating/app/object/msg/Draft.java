@@ -1,11 +1,17 @@
 package my.dating.app.object.msg;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import my.dating.app.object.msg.attachment.Draft_Attachment;
-import my.dating.app.service.DatabaseObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.solarframework.db.spring.DatabaseRegistry.DefaultDBService;
+import static org.solarframework.db.spring.DatabaseRegistry.SolarDBManager;
+
+@Entity
+@Table(name = "draft")
 public class Draft extends BaseMessage<Draft> {
     private transient List<Draft_Attachment> attachments;
 
@@ -15,10 +21,10 @@ public class Draft extends BaseMessage<Draft> {
     }
 
     public static Draft getById(long id) {
-        return DatabaseObject.getById(Draft.class, id).orElse(null);
+        return SolarDBManager.getById(Draft.class, id).orElse(null);
     }
     public static Draft get(long chatid, long userid) {
-        return DatabaseObject.getWhere(Draft.class, "ChatID = ? AND UserID = ?", chatid, userid).orElse(null);
+        return SolarDBManager.getWhere(Draft.class, "ChatID = ? AND UserID = ?", chatid, userid).orElse(null);
     }
 
     public List<Draft_Attachment> getAttachments() {
@@ -29,7 +35,7 @@ public class Draft extends BaseMessage<Draft> {
         attachments.addAll(List.of(attachment));
     }
     public int ClearAttachments() {
-        return DatabaseObject.doUpdate("DELETE FROM draft_attachment WHERE MessageID = ?", ID);
+        return DefaultDBService.doUpdate(Draft_Attachment.class, "DELETE FROM draft_attachment WHERE MessageID = ?", ID);
     }
 
 }

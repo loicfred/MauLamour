@@ -2,6 +2,7 @@ package my.dating.app.controller;
 
 import my.dating.app.object.*;
 import my.dating.app.object.chatting.Chat;
+import org.solarframework.auth.obj.Account_User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -26,28 +27,10 @@ public class MainController {
     @GetMapping("/chat")
     public String openChat(Model model, Principal loggedUser) {
         model.addAttribute("principal", loggedUser);
-        Profile.Profile_View currentUser = Profile.Profile_View.getView(loggedUser.getName());
+        Profile.Profile_View currentUser = Profile.Profile_View.getView(Account_User.getByAuthentication(loggedUser).getUsername());
         List<Chat.Chatlist_Item> latestChats = Chat.Chatlist_Item.getWithUser(currentUser.ID);
         model.addAttribute("latestChats", latestChats);
         model.addAttribute("Me", currentUser);
         return "chat";
     }
-
-    @GetMapping("/matches")
-    public String showMatchPage(@RequestParam(required = false) Long searchId,
-                                @RequestParam(required = false) Integer page,
-                                Model model, Principal loggedUser) {
-        model.addAttribute("principal", loggedUser);
-        User user = User.getByUsername(loggedUser.getName());
-        if (searchId == null) searchId = 0L;
-        if (page == null) page = 1;
-        List<Search_Profile> searchProfiles = Search_Profile.getByUser(user);
-        List<Profile.Profile_View> matches = Profile.Profile_View.search(searchId, page);
-        while (matches.size() < 10) matches.add(new Profile.Profile_View());
-        model.addAttribute("SearchID", searchId);
-        model.addAttribute("searchProfiles", searchProfiles);
-        model.addAttribute("matches", matches);
-        return "matches";
-    }
-
 }

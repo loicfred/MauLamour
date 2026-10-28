@@ -1,9 +1,10 @@
 package my.dating.app.object.msg;
 
-import my.dating.app.service.DatabaseObject;
+import jakarta.persistence.MappedSuperclass;
+import org.solarframework.db.spring.DatabaseObject;
 
-public class BaseMessage<T> extends DatabaseObject<T> {
-    public Long ID;
+@MappedSuperclass
+public class BaseMessage<T> extends DatabaseObject.ID_OBJ<Long, T> {
     public long ChatID;
     public long UserID;
     public String Content;
@@ -15,9 +16,6 @@ public class BaseMessage<T> extends DatabaseObject<T> {
         this.Content = content;
     }
 
-    public Long getID() {
-        return ID;
-    }
     public long getChatID() {
         return ChatID;
     }

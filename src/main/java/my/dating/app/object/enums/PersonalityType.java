@@ -1,6 +1,6 @@
 package my.dating.app.object.enums;
 
-public enum PersonalityType {
+public enum PersonalityType implements Displayable {
     EXTROVERT("Extrovert"),
     ENERGETIC("Energetic"),
     CHILL("Chill"),

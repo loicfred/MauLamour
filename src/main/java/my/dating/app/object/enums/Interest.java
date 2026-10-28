@@ -1,6 +1,6 @@
 package my.dating.app.object.enums;
 
-public enum Interest {
+public enum Interest implements Displayable {
     MUSIC("Music"),
     GAMING("Gaming"),
     SPORTS("Sports"),

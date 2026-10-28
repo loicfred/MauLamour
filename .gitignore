@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local settings and secrets ###
+.env
+# mailer-impl writes the mailbox, password included, here on the first run
+config/mail/

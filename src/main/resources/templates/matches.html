@@ -1,68 +1,77 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Profile Matches</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Matches</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .profile-box {
-            width: 20%;
-            height: 250px;
-        }
-        @media screen and (max-width: 480px) {
-            .profile-box {
-                width: 45%;
-                height: 400px;
-            }
-        }
+        .match-card img { width: 100%; aspect-ratio: 1; object-fit: cover; }
+        .match-percent { font-size: 1.75rem; font-weight: 700; }
     </style>
 </head>
-<body>
+<body class="bg-light">
 
 <div th:replace="/fragments/header :: mainHeader"></div>
 
 <div class="container my-4">
+    <h1 class="h4 mb-3">Find matches</h1>
 
-    <div class="d-flex">
-        <h4 class="mb-2">Find Matches</h4>
-        <form method="get" action="/matches" style="display: flex; align-items: center; padding: 5px;">
-            <label for="searchId" class="form-label" style="width: 30%">Select Search Profile</label>
-            <select class="form-select" id="searchId"  name="searchId" style="width: 60%" onchange="this.form.submit()">
-                <option th:value="0" disabled th:selected="${SearchID == 0}">
-                    -- Choose a Search Profile --
-                </option>
-                <option th:each="sp : ${searchProfiles}"
-                        th:value="${sp.ID}"
-                        th:text="${sp.Name}"
-                        th:selected="${sp.ID == SearchID}">
-                </option>
-            </select>
-            <a th:href="@{/profile/search}" class="btn btn-danger ms-auto">Add Search</a>
-        </form>
+    <div th:if="${param.deleted}" class="alert alert-success" role="status">The search has been deleted.</div>
 
+    <!-- No search yet -->
+    <div th:if="${searchProfiles.isEmpty()}" class="text-center py-5">
+        <p class="lead">You have no searches yet. Create one to see who matches you.</p>
+        <a th:href="@{/profile/search}" class="btn btn-danger btn-lg">Create a search</a>
     </div>
-    <div class="row g-4 d-flex align-items-center" style="flex-wrap: wrap; justify-content: center;">
-        <div class="profile-box" th:each="m : ${matches}">
-            <div class="card h-100">
-                <div class="card-body">
-                    <div class="profile-images mb-3">
-                        <img th:src="${m.Avatar != null ? '/file/avatar/' + m.ID + '.png' : '/img/default-pfp.png'}"
-                             class="rounded-circle" style="width: 100%; object-fit:cover;" alt="Profile Picture">
-                    </div>
-                    <div th:if="${m.ID != 0}" style="display: flex; align-items: center; justify-content: center;">
-                        <div style="width: 50%">
-                            <h5 class="card-title" th:text="${m.Name}"></h5>
-                            <p class="card-text">
-                                <strong>Age:</strong> <span th:text="${m.Age}"></span><br>
-                                <strong>Gender:</strong> <span th:text="${m.Gender}"></span><br>
+
+    <form th:unless="${searchProfiles.isEmpty()}" method="get" action="/matches" class="d-flex flex-wrap align-items-center gap-2 mb-4">
+        <label for="searchId" class="form-label mb-0 fw-semibold">Search</label>
+        <select class="form-select w-auto" id="searchId" name="searchId" onchange="this.form.submit()">
+            <option value="" disabled th:selected="${SearchID == 0}">Choose one of your searches</option>
+            <option th:each="sp : ${searchProfiles}" th:value="${sp.ID}" th:text="${sp.Name}" th:selected="${sp.ID == SearchID}"></option>
+        </select>
+        <noscript><button type="submit" class="btn btn-outline-secondary">Show</button></noscript>
+        <a th:if="${search != null}" th:href="@{'/profile/search/' + ${search.ID}}" class="btn btn-outline-secondary">Edit this search</a>
+        <a th:href="@{/profile/search}" class="btn btn-danger ms-auto">New search</a>
+    </form>
+
+    <th:block th:if="${search != null}">
+        <div th:if="${isDistanceIgnored}" class="alert alert-warning" role="status">
+            This search has a distance, but your profile has no location, so nobody matches the distance.
+            <a th:href="@{/profile/edit}">Add your location</a> to count it.
+        </div>
+
+        <p th:if="${matches.isEmpty() and page == 1}" class="lead text-center py-5">
+            Nobody matches this search yet. Try ticking fewer choices.
+        </p>
+        <p th:if="${matches.isEmpty() and page > 1}" class="text-center py-5">There are no more matches.</p>
+
+        <div class="row row-cols-2 row-cols-md-4 g-3">
+            <div class="col" th:each="m : ${matches}">
+                <a th:href="@{'/profile/' + ${m.profile().Username}}" class="card h-100 match-card text-decoration-none text-body">
+                    <img th:src="${m.profile().HasAvatar == true ? '/file/avatar/' + m.profile().Username + '.png' : '/img/default-pfp.png'}"
+                         class="card-img-top" th:alt="${'Photo of ' + m.profile().Name}">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="h5 card-title mb-1" th:text="${m.profile().Name}"></h2>
+                            <p class="card-text small mb-0">
+                                <span th:text="${m.profile().Age}"></span>,
+                                <span th:text="${T(my.dating.app.object.enums.Gender).valueOf(m.profile().Gender).displayName}"></span>
                             </p>
                         </div>
-                        <h1 style="width: 50%"><strong><span th:text="${'10%'}"></span></strong></h1>
+                        <span class="match-percent" th:text="${m.percent() + '%'}" th:aria-label="${m.percent() + ' percent match'}"></span>
                     </div>
-
-                </div>
+                </a>
             </div>
         </div>
-    </div>
+
+        <nav class="d-flex justify-content-between mt-4" aria-label="Pages of matches">
+            <a th:if="${page > 1}" th:href="@{/matches(searchId=${search.ID}, page=${previousPage})}" class="btn btn-outline-secondary">Previous</a>
+            <span th:unless="${page > 1}"></span>
+            <a th:if="${hasNext}" th:href="@{/matches(searchId=${search.ID}, page=${page + 1})}" class="btn btn-outline-secondary">Next</a>
+        </nav>
+    </th:block>
 </div>
 <footer th:replace="/fragments/footer :: mainFooter"></footer>
 

@@ -1,6 +1,6 @@
 package my.dating.app.object.enums;
 
-public enum Diet {
+public enum Diet implements Displayable {
     OMNIVORE("Omnivore"),
     VEGETARIAN("Vegetarian"),
     VEGAN("Vegan");

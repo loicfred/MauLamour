@@ -1,6 +1,6 @@
 package my.dating.app.object.enums;
 
-public enum Religion {
+public enum Religion implements Displayable {
     NONE("None"),
     CHRISTIANITY("Christianity"),
     ISLAM("Islam"),

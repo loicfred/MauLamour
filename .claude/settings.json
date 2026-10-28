@@ -1,0 +1,69 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Bash(mvn *)",
+      "Bash(./mvnw.cmd *)",
+      "Bash(./mvnw *)",
+      "PowerShell(mvn *)",
+      "PowerShell(.\\mvnw.cmd *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(sed -n *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(sort *)",
+      "Bash(uniq *)",
+      "Bash(cut *)",
+      "Bash(find *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(echo *)",
+      "Bash(pwd)",
+      "PowerShell(Set-Location *)",
+      "PowerShell(Select-String *)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Test-Path *)",
+      "PowerShell(ConvertFrom-Json *)",
+      "Read(//d/Programming/Project/Java/ERPSoftware/SolarERP/**)",
+      "Read(//d/Programming/Project/Java/API/SolarFramework/**)",
+      "Read(C:\\Users\\user\\.m2)"
+    ],
+    "deny": [
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git pull*)",
+      "Bash(git fetch*)",
+      "Bash(git remote add*)",
+      "Bash(git remote set-url*)",
+      "Bash(gh *)",
+      "PowerShell(git commit*)",
+      "PowerShell(git push*)",
+      "PowerShell(git pull*)",
+      "PowerShell(git fetch*)",
+      "PowerShell(gh *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/no-shell-edits.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

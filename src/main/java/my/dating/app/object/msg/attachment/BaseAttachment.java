@@ -1,11 +1,10 @@
 package my.dating.app.object.msg.attachment;
 
-import my.dating.app.service.DatabaseObject;
+import jakarta.persistence.MappedSuperclass;
+import org.solarframework.db.spring.DatabaseObject;
 
-import java.time.Instant;
-
-public class BaseAttachment<T> extends DatabaseObject<T> {
-    public long ID = Instant.now().toEpochMilli();
+@MappedSuperclass
+public class BaseAttachment<T> extends DatabaseObject.ID_OBJ<Long, T> {
     public long MessageID;
     public String FileName;
     public String FileType;
@@ -13,15 +12,13 @@ public class BaseAttachment<T> extends DatabaseObject<T> {
 
     public BaseAttachment() {}
     public BaseAttachment(long messageID, String fileName, String fileType, byte[] fileData) {
+        this.ID = nextId();
         this.MessageID = messageID;
         this.FileName = fileName;
         this.FileType = fileType;
         this.FileData = fileData;
     }
 
-    public long getID() {
-        return ID;
-    }
     public long getMessageID() {
         return MessageID;
     }

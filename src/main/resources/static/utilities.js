@@ -28,7 +28,6 @@ function formatChatDate(timestamp) {
 }
 
 function formatFileSize(data) {
-    console.log(typeof data);
     let bytes;
     if (typeof data === "string") {
         let base64Match = data.match(/^data:.*;base64,(.*)$/);

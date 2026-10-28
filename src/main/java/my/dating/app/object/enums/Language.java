@@ -1,6 +1,6 @@
 package my.dating.app.object.enums;
 
-public enum Language {
+public enum Language implements Displayable {
     ENGLISH("English"),
     SPANISH("Spanish"),
     FRENCH("French"),

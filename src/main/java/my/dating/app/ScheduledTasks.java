@@ -5,7 +5,7 @@ import org.springframework.cache.CacheManager;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import static my.dating.app.object.User.ClearAllFailedLogins;
+import static org.solarframework.auth.obj.Account_EmailVerification.ClearUnregisterUsers;
 
 @Component
 public class ScheduledTasks {
@@ -22,7 +22,8 @@ public class ScheduledTasks {
     // Run daily at midnight
     @Scheduled(cron = "0 0 0 * * ?")
     public void midNight() {
-        System.out.println("Cleaning up " +  ClearAllFailedLogins() + " pending account creation...");
+        ClearUnregisterUsers();
+        System.out.println("Cleaned up pending account creation...");
         System.out.println("Cleaning up " +  clearAllCaches() + " caches    ...");
     }
 

@@ -1,38 +1,50 @@
 package my.dating.app.object.chatting;
 
-import my.dating.app.object.User;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import my.dating.app.object.ViewCache;
 import my.dating.app.object.msg.Message;
-import my.dating.app.service.DatabaseObject;
+import org.solarframework.auth.obj.Account_User;
+import org.solarframework.db.spring.DatabaseObject;
 
-import java.time.Instant;
 import java.util.List;
 
-public class Chat extends DatabaseObject<Chat> {
+import static org.solarframework.db.spring.DatabaseRegistry.DefaultDBService;
+import static org.solarframework.db.spring.DatabaseRegistry.SolarDBManager;
+
+@Entity
+@Table(name = "chat")
+public class Chat extends DatabaseObject.ID_OBJ<Long, Chat> {
     private transient List<Message.Message_View> Messages;
 
-    public long ID;
     public long UserID1;
     public long UserID2;
 
     public Chat() {}
-    public Chat(User user, User user2) {
-        this.ID = Instant.now().toEpochMilli();
-        this.UserID1 = user.ID;
-        this.UserID2 = user2.ID;
+    public Chat(Account_User user, Account_User user2) {
+        this.ID = nextId();
+        this.UserID1 = user.getID();
+        this.UserID2 = user2.getID();
         Write();
     }
 
     public static Chat getById(long id) {
-        return DatabaseObject.getById(Chat.class, id).orElse(null);
+        return SolarDBManager.getById(Chat.class, id).orElse(null);
     }
     public List<Message.Message_View> getMessages() {
         return Messages == null ? Messages = Message.Message_View.getByChat(ID) : Messages;
     }
 
-    public void readAllMessages(long userid) {
-        DatabaseObject.doUpdate("UPDATE message SET isRead = ? WHERE ChatID = ? AND UserID = ?", true, ID, userid);
+    public static boolean isMember(long chatid, long userid) {
+        return SolarDBManager.Count(Chat.class, "ID = ? AND (UserID1 = ? OR UserID2 = ?)", chatid, userid, userid) > 0;
     }
 
+    public void readAllMessages(long userid) {
+        DefaultDBService.doUpdate(Message.class, "UPDATE message SET isRead = ? WHERE ChatID = ? AND UserID = ?", true, ID, userid); // with the class, so the cached messages are cleared
+        ViewCache.forgetChats(); // the unread counts
+    }
+
+    @Table(name = "chatlist_item")
     public static class Chatlist_Item extends Chat {
 
         public Long LatestMessageID;
@@ -46,10 +58,10 @@ public class Chat extends DatabaseObject<Chat> {
         public Long Unreads;
 
         public static List<Chatlist_Item> getWithUser(long userid) {
-            return DatabaseObject.getAllWhere(Chatlist_Item.class, "(UserID1 = ? OR UserID2 = ?) AND NOT PartnerID = ?", userid, userid, userid);
+            return SolarDBManager.getAllWhere(Chatlist_Item.class, "(UserID1 = ? OR UserID2 = ?) AND NOT PartnerID = ?", userid, userid, userid);
         }
-        public static Chatlist_Item find(long chatid, String username) {
-            return DatabaseObject.getWhere(Chatlist_Item.class, "ID = ? AND NOT PartnerUsername = ?", chatid, username).orElse(null);
+        public static Chatlist_Item find(long chatid, long userid) {
+            return SolarDBManager.getWhere(Chatlist_Item.class, "ID = ? AND NOT PartnerID = ?", chatid, userid).orElse(null);
         }
 
         public Long getLatestMessageID() {

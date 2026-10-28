@@ -1,6 +1,6 @@
 package my.dating.app.object.enums;
 
-public enum KidsPreference {
+public enum KidsPreference implements Displayable {
     ONE("Only one"),
     MULTIPLE("Siblings"),
     WANT_BUT_CANT("Yes, but can’t (via adoption/other means)"),

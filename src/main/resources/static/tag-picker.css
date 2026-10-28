@@ -1,0 +1,21 @@
+/* The tags of tag-picker.js. A ticked tag differs by colour and by its tick, so colour is never the only sign. */
+.choice-tag {
+    display: inline-block;
+    padding: 5px 10px;
+    margin: 3px;
+    background-color: #eee;
+    color: #212529;
+    border: 1px solid #ccc;
+    border-radius: 15px;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+.choice-tag[aria-pressed="true"] {
+    background-color: #0b5ed7; /* 5.2:1 against the white text */
+    border-color: #0b5ed7;
+    color: white;
+}
+.choice-tag[aria-pressed="true"]::before {
+    content: "✓ ";
+}

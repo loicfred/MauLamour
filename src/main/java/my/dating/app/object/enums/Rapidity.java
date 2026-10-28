@@ -1,6 +1,6 @@
 package my.dating.app.object.enums;
 
-public enum Rapidity {
+public enum Rapidity implements Displayable {
     INSTANTLY("Almost instantly"),
     FAST("Within an hour"),
     MEDIUM("Within a few hours"),

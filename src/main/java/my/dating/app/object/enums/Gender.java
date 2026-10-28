@@ -1,6 +1,6 @@
 package my.dating.app.object.enums;
 
-public enum Gender {
+public enum Gender implements Displayable {
     MALE("Male"),
     FEMALE("Female"),
     OTHER("Other");

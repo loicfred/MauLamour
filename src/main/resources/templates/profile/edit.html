@@ -7,23 +7,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <style>
-    .interest-tag, .language-tag {
-      display: inline-block;
-      padding: 5px 10px;
-      margin: 3px;
-      background-color: #eee;
-      border-radius: 15px;
-      cursor: pointer;
-      user-select: none;
-      transition: background-color 0.2s;
-    }
-    .interest-tag.selected, .language-tag.selected {
-      background-color: #007bff;
-      color: white;
-    }
-
-  </style>
+  <link rel="stylesheet" href="/tag-picker.css" />
 </head>
 <body class="bg-light">
 
@@ -35,8 +19,12 @@
         <form th:action="@{/post/profile/edit}" th:object="${profile}" method="post" enctype="multipart/form-data">
           <input type="hidden" th:field="*{ID}" />
 
-          <div th:if="${profile.NullFields > 0}" class="alert alert-danger">
-             Your profile isn't complete yet. Please complete your profile to start finding partners.
+          <div th:if="${param.updated}" class="alert alert-success" role="status">Your profile has been saved.</div>
+          <div th:if="${param.notAPicture}" class="alert alert-danger" role="alert">
+             That file isn't a picture, so nothing was saved. Choose a JPG, PNG or WebP image and save again.
+          </div>
+          <div th:unless="${profile.isFinished()}" class="alert alert-danger">
+             Your profile isn't finished yet. Add your name, gender, date of birth and location so other members can find you.
           </div>
 
           <div class="accordion" id="profileAccordion">
@@ -50,12 +38,12 @@
                   <div class="mb-3">
                     <label class="form-label fw-semibold">Profile Picture</label>
                     <div class="d-flex align-items-center gap-3">
-                      <img th:src="${profile.Avatar != null ? '/file/avatar/' + profile.Username + '.png' : '/img/default-pfp.png'}"
+                      <img th:src="${profile.HasAvatar == true ? '/file/avatar/' + profile.Username + '.png' : '/img/default-pfp.png'}"
                            class="rounded-circle border"
                            style="width:100px;height:100px;object-fit:cover;transition: transform .2s;"
                            onmouseover="this.style.transform='scale(1.1)'"
                            onmouseout="this.style.transform='scale(1)'"/>
-                      <input type="file" name="profilePicFile" class="form-control"/>
+                      <input type="file" name="profilePicFile" accept="image/*" class="form-control"/>
                     </div>
                   </div>
 
@@ -102,26 +90,26 @@
 
                   <!-- Interest -->
                   <div class="mb-3">
-                    <label class="form-label fw-semibold">Interests</label>
-                    <div id="interests-container">
-                      <span th:each="interest : ${T(my.dating.app.object.enums.Interest).values()}"
-                            th:data-value="${interest}" th:text="${interest.displayName}"
-                            class="interest-tag"></span>
+                    <label id="interests-label" class="form-label fw-semibold">Interests</label>
+                    <div data-choice-group="interests" role="group" aria-labelledby="interests-label">
+                      <button type="button" th:each="interest : ${T(my.dating.app.object.enums.Interest).values()}"
+                              th:data-value="${interest}" th:text="${interest.displayName}"
+                              class="choice-tag"></button>
                     </div>
-                    <div id="interests-selected-inputs">
+                    <div data-choice-inputs="interests">
                       <input type="hidden" th:each="i : *{interests}" name="interests" th:value="${i}" />
                     </div>
                   </div>
 
                   <!-- Languages -->
                   <div class="mb-3">
-                    <label class="form-label fw-semibold">Languages</label>
-                    <div id="languages-container">
-                      <span th:each="language : ${T(my.dating.app.object.enums.Language).values()}"
-                            th:data-value="${language}" th:text="${language.displayName}"
-                            class="language-tag"></span>
+                    <label id="languages-label" class="form-label fw-semibold">Languages</label>
+                    <div data-choice-group="languages" role="group" aria-labelledby="languages-label">
+                      <button type="button" th:each="language : ${T(my.dating.app.object.enums.Language).values()}"
+                              th:data-value="${language}" th:text="${language.displayName}"
+                              class="choice-tag"></button>
                     </div>
-                    <div id="languages-selected-inputs">
+                    <div data-choice-inputs="languages">
                       <input type="hidden" th:each="i : *{languages}" name="languages" th:value="${i}" />
                     </div>
                   </div>
@@ -171,6 +159,81 @@
             </div>
 
             <div class="accordion-item">
+              <h2 class="accordion-header" id="headingPhysical">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePhysical">Physical</button>
+              </h2>
+              <div id="collapsePhysical" class="accordion-collapse collapse show" data-bs-parent="#profileAccordion">
+                <div class="accordion-body">
+                  <!-- Height -->
+                  <div class="mb-3">
+                    <label for="PhysicalHeightCm" class="form-label fw-semibold">How tall are you? (cm)</label>
+                    <input type="number" min="100" max="250" th:field="*{PhysicalHeightCm}" class="form-control" placeholder="For example 172"/>
+                  </div>
+
+                  <!-- Body type -->
+                  <div class="mb-3">
+                    <label for="PhysicalBodyType" class="form-label fw-semibold">What is your body type?</label>
+                    <select th:field="*{PhysicalBodyType}" class="form-select">
+                      <option value="">Choose an option</option>
+                      <option th:each="opt : ${T(my.dating.app.object.enums.BodyType).values()}"
+                              th:value="${opt}" th:text="${opt.displayName}"></option>
+                    </select>
+                  </div>
+
+                  <!-- Skin colour -->
+                  <div class="mb-3">
+                    <label for="PhysicalSkinColour" class="form-label fw-semibold">What is your skin colour?</label>
+                    <select th:field="*{PhysicalSkinColour}" class="form-select">
+                      <option value="">Choose an option</option>
+                      <option th:each="opt : ${T(my.dating.app.object.enums.SkinColour).values()}"
+                              th:value="${opt}" th:text="${opt.displayName}"></option>
+                    </select>
+                  </div>
+
+                  <!-- Eye colour -->
+                  <div class="mb-3">
+                    <label for="PhysicalEyeColour" class="form-label fw-semibold">What colour are your eyes?</label>
+                    <select th:field="*{PhysicalEyeColour}" class="form-select">
+                      <option value="">Choose an option</option>
+                      <option th:each="opt : ${T(my.dating.app.object.enums.EyeColour).values()}"
+                              th:value="${opt}" th:text="${opt.displayName}"></option>
+                    </select>
+                  </div>
+
+                  <!-- Hair colour -->
+                  <div class="mb-3">
+                    <label for="PhysicalHairColour" class="form-label fw-semibold">What colour is your hair?</label>
+                    <select th:field="*{PhysicalHairColour}" class="form-select">
+                      <option value="">Choose an option</option>
+                      <option th:each="opt : ${T(my.dating.app.object.enums.HairColour).values()}"
+                              th:value="${opt}" th:text="${opt.displayName}"></option>
+                    </select>
+                  </div>
+
+                  <!-- Ethnic background -->
+                  <div class="mb-3">
+                    <label for="PhysicalEthnicBackground" class="form-label fw-semibold">What is your ethnic background?</label>
+                    <select th:field="*{PhysicalEthnicBackground}" class="form-select">
+                      <option value="">Choose an option</option>
+                      <option th:each="opt : ${T(my.dating.app.object.enums.EthnicBackground).values()}"
+                              th:value="${opt}" th:text="${opt.displayName}"></option>
+                    </select>
+                  </div>
+
+                  <!-- Tattoos: a select, so "not answered" stays apart from "No" -->
+                  <div class="mb-3">
+                    <label for="PhysicalHasTattoos" class="form-label fw-semibold">Do you have tattoos?</label>
+                    <select th:field="*{PhysicalHasTattoos}" class="form-select">
+                      <option value="">Choose an option</option>
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
               <h2 class="accordion-header" id="headingLifestyle">
                 <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLifestyle">Lifestyle</button>
               </h2>
@@ -178,8 +241,28 @@
                 <div class="accordion-body">
                   <!-- LifestyleEducation -->
                   <div class="mb-3">
-                    <label class="form-label fw-semibold">What studies did you do?</label>
-                    <input type="text" th:field="*{LifestyleEducation}" class="form-control" placeholder="How far you went in your studies?"/>
+                    <label for="LifestyleEducation" class="form-label fw-semibold">What studies did you do?</label>
+                    <input type="text" th:field="*{LifestyleEducation}" class="form-control" placeholder="For example a degree in nursing"/>
+                  </div>
+
+                  <!-- Highest education -->
+                  <div class="mb-3">
+                    <label for="LifestyleEducationLevel" class="form-label fw-semibold">What is your highest education?</label>
+                    <select th:field="*{LifestyleEducationLevel}" class="form-select">
+                      <option value="">Choose an option</option>
+                      <option th:each="opt : ${T(my.dating.app.object.enums.EducationLevel).values()}"
+                              th:value="${opt}" th:text="${opt.displayName}"></option>
+                    </select>
+                  </div>
+
+                  <!-- Living situation -->
+                  <div class="mb-3">
+                    <label for="LifestyleLivingSituation" class="form-label fw-semibold">Who do you live with?</label>
+                    <select th:field="*{LifestyleLivingSituation}" class="form-select">
+                      <option value="">Choose an option</option>
+                      <option th:each="opt : ${T(my.dating.app.object.enums.LivingSituation).values()}"
+                              th:value="${opt}" th:text="${opt.displayName}"></option>
+                    </select>
                   </div>
 
                   <!-- LifestyleOccupation -->
@@ -277,8 +360,12 @@
 
                   <!-- Pets -->
                   <div class="mb-3">
-                      <label class="form-label fw-semibold">Do you have any pets?</label>
-                      <input type="text" th:field="*{LifestylePets}" class="form-control" placeholder="Tell us about your pets."/>
+                      <label for="LifestylePets" class="form-label fw-semibold">Do you have any pets?</label>
+                      <select th:field="*{LifestylePets}" class="form-select">
+                        <option value="">Choose an option</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                      </select>
                   </div>
 
                 </div>
@@ -344,7 +431,17 @@
                     <select th:field="*{LovelifeWantKids}" class="form-select">
                       <option value="">Choose an option</option>
                       <option th:each="opt : ${T(my.dating.app.object.enums.KidsPreference).values()}"
-                              th:value="${opt}" th:text="${opt.displayName}">
+                              th:value="${opt}" th:text="${opt.displayName}"></option>
+                    </select>
+                  </div>
+
+                  <!-- Relationship status -->
+                  <div class="mb-3">
+                    <label for="LovelifeRelationshipStatus" class="form-label fw-semibold">What is your relationship status?</label>
+                    <select th:field="*{LovelifeRelationshipStatus}" class="form-select">
+                      <option value="">Choose an option</option>
+                      <option th:each="opt : ${T(my.dating.app.object.enums.RelationshipStatus).values()}"
+                              th:value="${opt}" th:text="${opt.displayName}"></option>
                     </select>
                   </div>
 
@@ -376,127 +473,7 @@
 
 <footer th:replace="/fragments/footer :: mainFooter"></footer>
 
-<script>
-
-    function setupSelectableGroup(groupName) {
-        const container = document.getElementById(`${groupName}-container`);
-        const selectedInputs = document.getElementById(`${groupName}-selected-inputs`);
-        const tagClass = `${groupName}-tag`;
-
-        const selected = new Set();
-        selectedInputs.querySelectorAll(`input[name="${groupName}"]`).forEach(i => selected.add(i.value));
-
-        function updateHiddenInputs() {
-            selectedInputs.innerHTML = '';
-            selected.forEach(value => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = groupName;
-                input.value = value;
-                selectedInputs.appendChild(input);
-            });
-        }
-
-        // Pre-select tags
-        container.querySelectorAll(`.${tagClass}`).forEach(tag => {
-            if (selected.has(tag.dataset.value)) tag.classList.add('selected');
-        });
-
-        // Handle tag clicks
-        container.addEventListener('click', e => {
-            if (!e.target.classList.contains(tagClass)) return;
-            const value = e.target.dataset.value;
-            if (selected.has(value)) {
-                selected.delete(value);
-                e.target.classList.remove('selected');
-            } else {
-                selected.add(value);
-                e.target.classList.add('selected');
-            }
-            updateHiddenInputs();
-        });
-    }
-    setupSelectableGroup('interests');
-    setupSelectableGroup('languages');
-</script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('interests-container');
-    const selectedInputs = document.getElementById('interests-selected-inputs');
-
-    // Initialize selected set based on hidden inputs
-    const selected = new Set();
-    selectedInputs.querySelectorAll('input[name="interests"]').forEach(i => selected.add(i.value));
-
-    function updateHiddenInputs() {
-      selectedInputs.innerHTML = '';
-      selected.forEach(value => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'interests';
-        input.value = value;
-        selectedInputs.appendChild(input);
-      });
-    }
-
-    // Pre-select tags
-    container.querySelectorAll('.interest-tag').forEach(tag => {
-      if (selected.has(tag.dataset.value)) tag.classList.add('selected');
-    });
-
-    container.addEventListener('click', e => {
-      if (!e.target.classList.contains('interest-tag')) return;
-      const value = e.target.dataset.value;
-      if (selected.has(value)) {
-        selected.delete(value);
-        e.target.classList.remove('selected');
-      } else {
-        selected.add(value);
-        e.target.classList.add('selected');
-      }
-      updateHiddenInputs();
-    });
-  });
-</script>
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('languages-container');
-    const selectedInputs = document.getElementById('languages-selected-inputs');
-
-    // Initialize selected set based on hidden inputs
-    const selected = new Set();
-    selectedInputs.querySelectorAll('input[name="languages"]').forEach(i => selected.add(i.value));
-
-    function updateHiddenInputs() {
-      selectedInputs.innerHTML = '';
-      selected.forEach(value => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'languages';
-        input.value = value;
-        selectedInputs.appendChild(input);
-      });
-    }
-
-    // Pre-select tags
-    container.querySelectorAll('.language-tag').forEach(tag => {
-      if (selected.has(tag.dataset.value)) tag.classList.add('selected');
-    });
-
-    container.addEventListener('click', e => {
-      if (!e.target.classList.contains('language-tag')) return;
-      const value = e.target.dataset.value;
-      if (selected.has(value)) {
-        selected.delete(value);
-        e.target.classList.remove('selected');
-      } else {
-        selected.add(value);
-        e.target.classList.add('selected');
-      }
-      updateHiddenInputs();
-    });
-  });
-</script>
+<script src="/tag-picker.js"></script>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {

@@ -1,29 +1,12 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Edit Search Profile</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${search.ID == null ? 'New search' : 'Edit search'}">Search</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="/tag-picker.css" />
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <style>
-        .interest-tag, .language-tag {
-            display: inline-block;
-            padding: 5px 10px;
-            margin: 3px;
-            background-color: #eee;
-            border-radius: 15px;
-            cursor: pointer;
-            user-select: none;
-            transition: background-color 0.2s;
-        }
-        .interest-tag.selected, .language-tag.selected {
-            background-color: #007bff;
-            color: white;
-        }
-
-    </style>
 </head>
 <body class="bg-light">
 
@@ -32,393 +15,108 @@
 <div class="container mt-3">
     <div class="row justify-content-center">
         <div class="col-lg-8 col-md-10">
-            <form th:action="@{/post/profile/edit}" th:object="${profile}" method="post" enctype="multipart/form-data">
-                <input type="hidden" th:field="*{ID}" />
+            <h1 class="h3 mb-1" th:text="${search.ID == null ? 'Describe who you are looking for' : 'Edit your search'}"></h1>
+            <p class="text-muted">Leave anything you don't mind about empty: only what you fill in counts towards the match %.</p>
 
-                <div th:if="${profile.NullFields > 0}" class="alert alert-danger">
-                    Your search profile isn't complete yet. Please complete your search profile to start finding partners.
+            <form th:action="@{/post/profile/search}" method="post" id="searchForm">
+                <input type="hidden" name="ID" th:value="${search.ID}" />
+
+                <!-- Name -->
+                <div class="mb-3">
+                    <label for="Name" class="form-label fw-semibold">Name of this search</label>
+                    <input type="text" id="Name" name="Name" th:value="${search.Name}" maxlength="60" required
+                           class="form-control" placeholder="For example Weekend in Curepipe">
                 </div>
 
-                <div class="accordion" id="profileAccordion">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingPersonal">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePersonal">Essential Details</button>
-                        </h2>
-                        <div id="collapsePersonal" class="accordion-collapse collapse show" data-bs-parent="#profileAccordion">
-                            <div class="accordion-body">
-                                <!-- Gender -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Gender</label>
-                                    <div id="genders-container">
-                                       <span th:each="gender : ${T(my.dating.app.object.enums.Gender).values()}"
-                                             th:data-value="${gender}" th:text="${gender.displayName}"
-                                             class="interest-tag"></span>
-                                    </div>
-                                    <div id="genders-selected-inputs">
-                                        <input type="hidden" name="genders" th:value="*{Gender}" />
-                                    </div>
-                                </div>
-
-                                <!-- Interest -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Interests</label>
-                                    <div id="interests-container">
-                                       <span th:each="interest : ${T(my.dating.app.object.enums.Interest).values()}"
-                                       th:data-value="${interest}" th:text="${interest.displayName}"
-                                       class="interest-tag"></span>
-                                    </div>
-                                    <div id="interests-selected-inputs">
-                                        <input type="hidden" name="interests" th:value="*{interests}" />
-                                    </div>
-                                </div>
-
-                                <!-- Languages -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Languages</label>
-                                    <div id="languages-container">
-                                       <span th:each="language : ${T(my.dating.app.object.enums.Language).values()}"
-                                       th:data-value="${language}" th:text="${language.displayName}"
-                                       class="language-tag"></span>
-                                    </div>
-                                    <div id="languages-selected-inputs">
-                                        <input type="hidden" name="languages" th:value="*{languages}" />
-                                    </div>
-                                </div>
-
-                                <!-- Personality -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">How is your personality?</label>
-                                    <select th:field="*{PersonalityType}" class="form-select">
-                                        <option value="">Choose an option</option>
-                                        <option th:each="pt : ${T(my.dating.app.object.enums.PersonalityType).values()}"
-                                                th:value="${pt}" th:text="${pt.displayName}"></option>
-                                    </select>
-                                </div>
-
-                                <!-- Map Button -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Location (Warning: Never use your exact location, but an area surrounding.)</label>
-                                    <div class="input-group">
-                                        <input type="text" th:field="*{Latitude}" id="latitude" class="form-control" placeholder="Latitude" readonly>
-                                        <input type="text" th:field="*{Longitude}" id="longitude" class="form-control" placeholder="Longitude" readonly>
-                                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mapModal">
-                                            Pick on Map
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <!-- Map Modal -->
-                                <div class="modal fade" id="mapModal" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-xl modal-dialog-centered">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Select Location</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body" style="height: 500px;">
-                                                <div id="map" style="height: 100%;"></div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                        </div>
+                <!-- Age, height, distance -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6 col-md-3">
+                        <label for="MinAge" class="form-label fw-semibold">Age from</label>
+                        <input type="number" id="MinAge" name="MinAge" min="18" max="99" th:value="${search.MinAge}" class="form-control">
                     </div>
-
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingLifestyle">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLifestyle">Lifestyle</button>
-                        </h2>
-                        <div id="collapseLifestyle" class="accordion-collapse collapse show" data-bs-parent="#profileAccordion">
-                            <div class="accordion-body">
-                                <!-- LifestyleEducation -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">What studies did you do?</label>
-                                    <input type="text" th:field="*{LifestyleEducation}" class="form-control" placeholder="How far you went in your studies?"/>
-                                </div>
-
-                                <!-- LifestyleOccupation -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Do you have a job? What is it?</label>
-                                    <input type="text" th:field="*{LifestyleOccupation}" class="form-control" placeholder="Your job or profession"/>
-                                </div>
-
-                                <!-- Religion -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">What is your religion?</label>
-                                    <select th:field="*{LifestyleReligion}" class="form-select">
-                                        <option value="">Choose an option</option>
-                                        <option th:each="r : ${T(my.dating.app.object.enums.Religion).values()}"
-                                                th:value="${r}" th:text="${r.displayName}"></option>
-                                    </select>
-                                </div>
-
-                                <!-- Diet -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">What are your diet habits?</label>
-                                    <select th:field="*{LifestyleDiet}" class="form-select">
-                                        <option value="">Choose an option</option>
-                                        <option th:each="d : ${T(my.dating.app.object.enums.Diet).values()}"
-                                                th:value="${d}" th:text="${d.displayName}"></option>
-                                    </select>
-                                </div>
-
-                                <!-- Cooking -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Would you cook for your partner if you are able to?</label>
-                                    <select th:field="*{LifestyleWouldCook}" class="form-select">
-                                        <option value="">Choose an option</option>
-                                        <option th:each="opt : ${T(my.dating.app.object.enums.LifestylePreference).values()}"
-                                                th:value="${opt}" th:text="${opt.displayName}">
-                                        </option>
-                                    </select>
-                                </div>
-
-                                <!-- Chores -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Would you take care of the household chores if you are able to?</label>
-                                    <select th:field="*{LifestyleWouldChore}" class="form-select">
-                                        <option value="">Choose an option</option>
-                                        <option th:each="opt : ${T(my.dating.app.object.enums.LifestylePreference).values()}"
-                                                th:value="${opt}" th:text="${opt.displayName}">
-                                        </option>
-                                    </select>
-                                </div>
-
-                                <!-- Smoking -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Do you smoke?</label>
-                                    <select th:field="*{LifestyleSmoking}" class="form-select">
-                                        <option value="">Choose an option</option>
-                                        <option th:each="opt : ${T(my.dating.app.object.enums.BadHabit).values()}"
-                                                th:value="${opt}" th:text="${opt.displayName}">
-                                        </option>
-                                    </select>
-                                </div>
-
-                                <!-- Drinking -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Do you drink alcohol?</label>
-                                    <select th:field="*{LifestyleDrinking}" class="form-select">
-                                        <option value="">Choose an option</option>
-                                        <option th:each="opt : ${T(my.dating.app.object.enums.BadHabit).values()}"
-                                                th:value="${opt}" th:text="${opt.displayName}">
-                                        </option>
-                                    </select>
-                                </div>
-
-                                <!-- Exercise -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Do you exercise?</label>
-                                    <select th:field="*{LifestyleExercise}" class="form-select">
-                                        <option value="">Choose an option</option>
-                                        <option th:each="opt : ${T(my.dating.app.object.enums.BadHabit).values()}"
-                                                th:value="${opt}" th:text="${opt.displayName}">
-                                        </option>
-                                    </select>
-                                </div>
-
-                                <!-- Illness -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Do you have any allergies or illness?</label>
-                                    <input type="text" th:field="*{LifestyleAllergies}" class="form-control" placeholder="Tell us about your allergies or illnesses."/>
-                                </div>
-
-                                <!-- Disability -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Do you have any disabilities?</label>
-                                    <input type="text" th:field="*{LifestyleDisability}" class="form-control" placeholder="Tell us about your disabilities."/>
-                                </div>
-
-                                <!-- Pets -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Do you have any pets?</label>
-                                    <input type="text" th:field="*{LifestylePets}" class="form-control" placeholder="Tell us about your pets."/>
-                                </div>
-
-                            </div>
-                        </div>
+                    <div class="col-6 col-md-3">
+                        <label for="MaxAge" class="form-label fw-semibold">Age to</label>
+                        <input type="number" id="MaxAge" name="MaxAge" min="18" max="99" th:value="${search.MaxAge}" class="form-control">
                     </div>
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingContact">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseContact">Messaging</button>
-                        </h2>
-                        <div id="collapseContact" class="accordion-collapse collapse show" data-bs-parent="#profileAccordion">
-                            <div class="accordion-body">
-
-                                <!-- Rapidity -->
-                                <div class="mb-3">
-                                    <input type="checkbox" th:field="*{MessageLeaveOnRead}" /> Do you often leave people on 'read'?
-                                </div>
-
-                                <!-- Rapidity -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">How fast do you answer messages?</label>
-                                    <select th:field="*{MessageReplySpeed}" class="form-select">
-                                        <option value="">Choose an option</option>
-                                        <option th:each="opt : ${T(my.dating.app.object.enums.Rapidity).values()}"
-                                                th:value="${opt}" th:text="${opt.displayName}">
-                                        </option>
-                                    </select>
-                                </div>
-
-                            </div>
-                        </div>
+                    <div class="col-6 col-md-3">
+                        <label for="MinHeightCm" class="form-label fw-semibold">Height from (cm)</label>
+                        <input type="number" id="MinHeightCm" name="MinHeightCm" min="100" max="250" th:value="${search.MinHeightCm}" class="form-control">
                     </div>
-
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="headingFamily">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFamily">Love life</button>
-                        </h2>
-                        <div id="collapseFamily" class="accordion-collapse collapse show" data-bs-parent="#profileAccordion">
-                            <div class="accordion-body">
-
-                                <!-- Previous Relationship -->
-                                <div class="mb-3">
-                                    How many previous partners do you have? <input type="number" th:field="*{LovelifePastPartners}"/>
-                                </div>
-
-                                <!-- Virginity -->
-                                <div class="mb-3">
-                                    <input type="checkbox" th:field="*{LovelifeVirginity}"/> Are you a virgin?
-                                </div>
-
-                                <!-- Marriage -->
-                                <div class="mb-3">
-                                    <input type="checkbox" th:field="*{LovelifeMarriage}" /> Are you looking for a partner to marry?
-                                </div>
-
-                                <!-- Religion matter -->
-                                <div class="mb-3">
-                                    <input type="checkbox" th:field="*{LovelifeReligionMatter}" /> If yes, must your partner be of same religion as you?
-                                </div>
-
-                                <!-- Children -->
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Do you plan to have kids?</label>
-                                    <select th:field="*{LovelifeWantKids}" class="form-select">
-                                        <option value="">Choose an option</option>
-                                        <option th:each="opt : ${T(my.dating.app.object.enums.KidsPreference).values()}"
-                                                th:value="${opt}" th:text="${opt.displayName}">
-                                    </select>
-                                </div>
-
-                                <!-- Already have children -->
-                                <div class="mb-3">
-                                    <input type="checkbox" th:field="*{LovelifeAlreadyHaveChildren}" /> Do you already have children?
-                                </div>
-
-                                <!-- Willing to relocate -->
-                                <div class="mb-3">
-                                    <input type="checkbox" th:field="*{LovelifeWillingToRelocate}"/> Are you willing to relocate for your partner?
-                                </div>
-
-                            </div>
-                        </div>
+                    <div class="col-6 col-md-3">
+                        <label for="MaxHeightCm" class="form-label fw-semibold">Height to (cm)</label>
+                        <input type="number" id="MaxHeightCm" name="MaxHeightCm" min="100" max="250" th:value="${search.MaxHeightCm}" class="form-control">
                     </div>
-
+                </div>
+                <div class="mb-3">
+                    <label for="LocationRadiusKM" class="form-label fw-semibold">Lives within (km)</label>
+                    <input type="number" id="LocationRadiusKM" name="LocationRadiusKM" min="1" th:value="${search.LocationRadiusKM}"
+                           class="form-control" aria-describedby="radiusHelp">
+                    <div id="radiusHelp" class="form-text">Measured from the location on your own profile.</div>
                 </div>
 
-                <!-- Save Button -->
-                <div class="d-grid" style="margin-bottom: 5px;">
-                    <button type="submit" class="btn btn-primary btn-lg">Save Changes</button>
+                <div class="accordion" id="searchAccordion">
+                    <!-- One section per group of choices: tick every answer you would accept -->
+                    <div class="accordion-item" th:each="section, s : ${T(my.dating.app.object.enums.SearchChoice).bySection()}">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                    th:data-bs-target="${'#section' + s.index}" th:text="${section.key}"></button>
+                        </h2>
+                        <div th:id="${'section' + s.index}" class="accordion-collapse collapse show">
+                            <div class="accordion-body">
+                                <div class="mb-3" th:each="choice : ${section.value}">
+                                    <span th:id="${choice.name() + '-label'}" class="form-label fw-semibold d-block" th:text="${choice.label}"></span>
+                                    <div th:data-choice-group="${choice.name()}" role="group" th:aria-labelledby="${choice.name() + '-label'}">
+                                        <button type="button" class="choice-tag" th:each="opt : ${choice.options}"
+                                                th:data-value="${opt.name()}" th:text="${opt.displayName}"></button>
+                                    </div>
+                                    <div th:data-choice-inputs="${choice.name()}">
+                                        <input type="hidden" th:each="v : ${search.getChoices().get(choice)}"
+                                               th:name="${choice.name()}" th:value="${v}" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#sectionYesNo">Yes or no</button>
+                        </h2>
+                        <div id="sectionYesNo" class="accordion-collapse collapse show">
+                            <div class="accordion-body">
+                                <div class="mb-3" th:each="setting : ${T(my.dating.app.object.Search_Profile).YES_NO_SETTINGS}"
+                                     th:with="wanted=${setting.wanted().apply(search)}">
+                                    <label th:for="${setting.field()}" class="form-label fw-semibold" th:text="${setting.label()}"></label>
+                                    <select th:id="${setting.field()}" th:name="${setting.field()}" class="form-select">
+                                        <option value="" th:selected="${wanted == null}">I don't mind</option>
+                                        <option value="true" th:selected="${wanted == true}">Yes</option>
+                                        <option value="false" th:selected="${wanted == false}">No</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
+                <div th:unless="${errors.isEmpty()}" class="alert alert-danger mt-3" role="alert">
+                    <p class="mb-1 fw-semibold">Nothing was saved yet. Please fix:</p>
+                    <ul class="mb-0"><li th:each="e : ${errors}" th:text="${e}"></li></ul>
+                </div>
+
+                <div class="d-grid my-3">
+                    <button type="submit" class="btn btn-primary btn-lg">Save search</button>
+                </div>
+            </form>
+
+            <form th:if="${search.ID != null}" th:action="@{'/post/profile/search/' + ${search.ID} + '/delete'}" method="post"
+                  onsubmit="return confirm('Delete this search? This cannot be undone.');" class="d-grid mb-4">
+                <button type="submit" class="btn btn-outline-danger">Delete this search</button>
             </form>
         </div>
     </div>
 </div>
 
 <footer th:replace="/fragments/footer :: mainFooter"></footer>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-
-        function setupSelectableGroup(groupName) {
-            const container = document.getElementById(`${groupName}-container`);
-            const selectedInput = document.getElementById(`${groupName}-selected-inputs`).querySelector('input[name="'+groupName+'"]');
-
-            // Initialize selected set from hidden input (split by comma)
-            const selected = new Set();
-            if (selectedInput && selectedInput.value) {
-                selectedInput.value.split(',').forEach(v => selected.add(v));
-            }
-
-            function updateHiddenInput() {
-                if (selectedInput) {
-                    selectedInput.value = Array.from(selected).join(',');
-                } else {
-                    // If no hidden input exists yet, create it
-                    const hidden = document.createElement('input');
-                    hidden.type = 'hidden';
-                    hidden.name = groupName;
-                    hidden.value = Array.from(selected).join(',');
-                    document.getElementById(`${groupName}-selected-inputs`).appendChild(hidden);
-                }
-            }
-
-            // Pre-select tags
-            container.querySelectorAll(`.${groupName}-tag`).forEach(tag => {
-                if (selected.has(tag.dataset.value)) tag.classList.add('selected');
-            });
-
-            // Handle tag clicks
-            container.addEventListener('click', e => {
-                if (!e.target.classList.contains(`${groupName}-tag`)) return;
-                const value = e.target.dataset.value;
-                if (selected.has(value)) {
-                    selected.delete(value);
-                    e.target.classList.remove('selected');
-                } else {
-                    selected.add(value);
-                    e.target.classList.add('selected');
-                }
-                updateHiddenInput();
-            });
-
-            // Initialize hidden input value
-            updateHiddenInput();
-        }
-
-        // Initialize the groups
-        setupSelectableGroup('genders');
-        setupSelectableGroup('interests');
-        setupSelectableGroup('languages');
-
-    });
-</script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        let map, marker;
-
-        const mapModal = document.getElementById('mapModal');
-        mapModal.addEventListener('shown.bs.modal', () => {
-            if (!map) {
-                map = L.map('map').setView([20, 0], 2); // Default world view
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                }).addTo(map);
-
-                map.on('click', function(e) {
-                    const lat = e.latlng.lat.toFixed(6);
-                    const lng = e.latlng.lng.toFixed(6);
-
-                    // Update marker
-                    if (marker) marker.remove();
-                    marker = L.marker([lat, lng]).addTo(map);
-
-                    // Update form inputs
-                    document.getElementById('latitude').value = lat;
-                    document.getElementById('longitude').value = lng;
-                });
-            }
-            map.invalidateSize(); // Fix map not resizing properly inside modal
-        });
-    });
-</script>
+<script src="/tag-picker.js"></script>
 </body>
 </html>

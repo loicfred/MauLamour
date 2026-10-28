@@ -1,12 +1,17 @@
 package my.dating.app.object.msg;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import my.dating.app.object.msg.attachment.Message_Attachment;
-import my.dating.app.service.DatabaseObject;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.solarframework.db.spring.DatabaseRegistry.DefaultDBService;
+import static org.solarframework.db.spring.DatabaseRegistry.SolarDBManager;
+
+@Entity
+@Table(name = "message")
 public class Message extends BaseMessage<Message> {
     public transient List<Message_Attachment> attachments;
     public transient List<Message_Reaction.Message_Reaction_View> reactions;
@@ -18,12 +23,12 @@ public class Message extends BaseMessage<Message> {
     public Message() {}
     public Message(long chatid, long userid, String content) {
         super(chatid, userid, content);
-        this.ID = Instant.now().toEpochMilli();
+        this.ID = nextId();
         Write();
     }
 
     public static Message getById(long id) {
-        return DatabaseObject.getById(Message.class, id).orElse(null);
+        return SolarDBManager.getById(Message.class, id).orElse(null);
     }
 
     public boolean isEdited() {
@@ -57,13 +62,18 @@ public class Message extends BaseMessage<Message> {
         attachments.addAll(List.of(attachment));
     }
     public int ClearAttachments() {
-        return DatabaseObject.doUpdate("DELETE FROM message_attachment WHERE MessageID = ?", ID);
+        return DefaultDBService.doUpdate(Message_Attachment.class, "DELETE FROM message_attachment WHERE MessageID = ?", ID);
+    }
+
+    public int ClearReactions() {
+        return DefaultDBService.doUpdate(Message_Reaction.class, "DELETE FROM message_reaction WHERE MessageID = ?", ID);
     }
 
     public List<Message_Reaction.Message_Reaction_View> getReactions() {
         return reactions == null ? reactions = Message_Reaction.Message_Reaction_View.getByMessage(ID) : reactions;
     }
 
+    @Table(name = "message_view")
     public static class Message_View extends Message {
         public Long AttachmentCount;
         public Long ReactionCount;
@@ -71,10 +81,10 @@ public class Message extends BaseMessage<Message> {
         public Message_View() {}
 
         public static List<Message_View> getByChat(long chatid) {
-            return DatabaseObject.getAllWhere(Message_View.class, "ChatID = ?", chatid);
+            return SolarDBManager.getAllWhere(Message_View.class, "ChatID = ? ORDER BY ID", chatid);
         }
         public static Message_View getById(long id) {
-            return DatabaseObject.getById(Message_View.class, id).orElse(null);
+            return SolarDBManager.getWhere(Message_View.class, "ID = ?", id).orElse(null);
         }
 
         public Long getAttachmentCount() {

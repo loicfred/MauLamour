@@ -76,7 +76,7 @@
 <header th:replace="/fragments/header :: mainHeader"></header>
 
 <div class="container mt-2 d-flex align-items-center" style="position: relative;">
-    <img th:src="${profile.Avatar != null ? '/file/avatar/' + profile.Username + '.png' : '/img/default-pfp.png'}"
+    <img th:src="${profile.HasAvatar == true ? '/file/avatar/' + profile.Username + '.png' : '/img/default-pfp.png'}"
          class="pfp rounded-circle" style="width:150px;height:150px;object-fit:cover;" alt="Profile Picture">
 
     <div class="username-box">
@@ -86,8 +86,8 @@
                 <a th:if="${isOwner}" th:href="@{/profile/edit}" class="btn btn-danger ms-auto" style="margin-right: 10px">Edit Profile</a>
             </div>
             <div th:if="${profile != null}" class="d-flex align-items-center" style="gap: 15px;">
-                <h6 th:text="${'Gender: ' + profile.Gender}"></h6>
-                <h6 th:text="${'Age: ' + profile.Age}"></h6>
+                <h6 th:if="${profile.Gender != null}" th:text="${'Gender: ' + T(my.dating.app.object.enums.Gender).valueOf(profile.Gender).displayName}"></h6>
+                <h6 th:if="${profile.Age != null}" th:text="${'Age: ' + profile.Age}"></h6>
             </div>
         </div>
 
@@ -105,6 +105,21 @@
                     <div id="interests-container">
                         <span class="interest-tag" th:each="interest : ${profile.getInterests()}" th:data-value="${interest}" th:text="${interest.displayName}"></span>
                     </div>
+                </div>
+
+                <div class="mb-3" th:unless="${profile.getLanguages().isEmpty()}">
+                    <h4>Languages</h4>
+                    <span class="interest-tag" th:each="language : ${profile.getLanguages()}" th:text="${language.displayName}"></span>
+                </div>
+
+                <div class="mb-3" th:unless="${profile.getAnswers().isEmpty()}">
+                    <h4>About me</h4>
+                    <dl class="row mb-0">
+                        <th:block th:each="a : ${profile.getAnswers()}">
+                            <dt class="col-sm-6 fw-semibold" th:text="${a.question()}"></dt>
+                            <dd class="col-sm-6" th:text="${a.answer()}"></dd>
+                        </th:block>
+                    </dl>
                 </div>
             </div>
             <div class="photo-grid" style="width: 50%;">
